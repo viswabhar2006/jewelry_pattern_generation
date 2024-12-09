@@ -86,7 +86,7 @@ const Indexx = () => {
         navigate('/login');
     };
 
-    
+
 
     const nextSlide = () => setSlideIndex((prev) => (prev + 1) % slides.length);
     const prevSlide = () => setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
