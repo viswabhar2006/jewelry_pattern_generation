@@ -8,6 +8,7 @@ const CreateAccount = () => {
         confirmPassword: false,
     });
 
+
     const togglePasswordVisibility = (field) => {
         setPasswordVisible((prev) => ({
             ...prev,
@@ -24,11 +25,24 @@ const CreateAccount = () => {
             alert('Passwords do not match. Please try again.');
             return;
         }
-
         
+        const inputElement = document.getElementById('yourInputId'); // Replace with your actual input ID
+       if (inputElement) {
+                 const value = inputElement.value;
+        // Proceed with using the value
+        } else {
+                console.error('Input element not found');
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Your handleSubmit function and other code here
+        });
+
+        console.log(inputElement); // This should not be null
+
+        const fullName = document.getElementById('name').value; // renamed to fullName
         const email = document.getElementById('email').value;
         const phone = document.getElementById('phone').value;
-        
         const username = document.getElementById('username').value;
 
         // Sending data to backend
@@ -38,7 +52,7 @@ const CreateAccount = () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-               
+                fullName,  // changed from 'name' to 'fullName'
                 email,
                 phone,
                 username,
@@ -66,7 +80,10 @@ const CreateAccount = () => {
             <div className="login-box">
                 <h1>Create Account</h1>
                 <form id="signupForm" onSubmit={handleSubmit}>
-                    
+                    <div className="input-group">
+                        <label htmlFor="name">Full Name:</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your full name" required />
+                    </div>
                     <div className="input-group">
                         <label htmlFor="email">Email:</label>
                         <input type="email" id="email" name="email" placeholder="Enter your email" required />
@@ -75,7 +92,6 @@ const CreateAccount = () => {
                         <label htmlFor="phone">Phone Number:</label>
                         <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" pattern="[0-9]{10}" required />
                     </div>
-                    
                     <div className="input-group">
                         <label htmlFor="username">Username:</label>
                         <input type="text" id="username" name="username" placeholder="Choose a username" required />

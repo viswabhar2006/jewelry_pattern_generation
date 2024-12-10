@@ -1,6 +1,6 @@
 html, body {
     height: 100%;
-    margin: 0 ;
+    margin: 0;
     padding: 0;
 }
 
@@ -10,22 +10,19 @@ html, body {
     align-items: flex-start; /* Aligns content to the top */
     min-height: 100vh; /* Use min-height to ensure it grows with content */
     width: 100vw;
-    background: url('1.avif') no-repeat center center fixed;
     background-size: cover;
+    background-image: url('9.png');
     padding: 20px; /* Adds space around the content */
     overflow-y: auto; /* Allows scrolling if content overflows */
-    margin-top: 0px;
 }
 
 .login-box {
-    margin-top: 0px ;
     width: 100%;
-    max-width: 500px;
+    max-width: 400px;
     padding: 20px;
     border-radius: 10px;
     text-align: center;
     color: white; /* Ensure text is readable */
-    
 }
 
 .login-box h1 {

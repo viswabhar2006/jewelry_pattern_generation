@@ -6,13 +6,18 @@ html, body {
 }
 
 .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-image: url('9.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
     height: 100vh;
-    width: 100vw;
-    background: url('1.avif') no-repeat center center fixed ; /* Background image */
-    background-size:contain;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+h1{
+    font-family: 'Times New Roman', Times, serif;
 }
 
 .login-box {
@@ -23,14 +28,14 @@ html, body {
     border-radius: 10px;
     color: black; /* Text color set to black */
     text-align: center;
-    background-color: rgba(0,0,0,0.5); /* Remove background color */
+    background: none; /* Remove background color */
 }
 
 .login-box h1 {
     font-size: 50px !important;
     font-weight: 700;
     margin-bottom: 1.5rem;
-    color: white;
+    color: rgb(0, 0, 0);
 }
 
 .input-group {
@@ -41,9 +46,10 @@ html, body {
 
 .input-group label {
     display: block;
-    font-size: 20px !important;
+    font-size: 23px !important;
     font-weight: bolder !important;
-    color: white;
+    font-family: 'Times New Roman', Times, serif;
+    color: white !important;
     margin:0;
 }
 
@@ -94,11 +100,11 @@ html, body {
 
 .links {
     display: flex;
-    justify-content: space-between !important;
+    justify-content: center !important;
 }
 
 .links a {
-    font-size: 17px !important;
+    font-size: 20px !important;
     text-decoration: none;
     font-weight: bolder;
 }
@@ -124,6 +130,7 @@ html, body {
 }
 
 .oauth-buttons button {
+    color: black;
     margin-top:2px;
     background: transparent !important;
     padding: 0px;
@@ -134,7 +141,6 @@ html, body {
 
 .oauth-buttons button:hover {
     transform: scale(1.5);
-    color: white;
 }
 
 .buttons_container {

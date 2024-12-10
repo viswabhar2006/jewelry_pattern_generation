@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle, faGithub, faLinkedin } from '@fortawesome/free-brands-svg-icons'; // Import Font Awesome icons
 import './Login.css';
 
+
 const Login = ({ onLogin }) => { // Accept onLogin as a prop
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [username, setUsername] = useState('');
@@ -101,20 +102,19 @@ const Login = ({ onLogin }) => { // Accept onLogin as a prop
                     </div>
                 </form>
                 <div className="links">
-                    <Link to="/forgot-password">Forgot password</Link>
                     <Link to="/create-account">Create new account</Link>
                 </div>
                 <div className="oauth-buttons">
                     <h3>Or login with</h3>
                     <div className='buttons_container'>
                     <button onClick={() => window.location.href = 'http://localhost:3001/auth/google'}>
-                        <FontAwesomeIcon icon={faGoogle} />
+                    <FontAwesomeIcon icon={faGoogle} />
                     </button>
                     <button onClick={() => window.location.href = 'http://localhost:3001/auth/github'}>
-                        <FontAwesomeIcon icon={faGithub} />
+                    <FontAwesomeIcon icon={faGithub} />
                     </button>
                     <button onClick={() => window.location.href = 'http://localhost:3001/auth/linkedin'}>
-                        <FontAwesomeIcon icon={faLinkedin} />
+                    <FontAwesomeIcon icon={faLinkedin} />
                     </button>
                     </div>
                 </div>

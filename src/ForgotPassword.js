@@ -14,6 +14,7 @@ const ForgotPassword = () => {
         setIsOtpSent(true);
     };
 
+
     const handleOtpSubmit = (e) => {
         e.preventDefault();
         // Simulate OTP verification

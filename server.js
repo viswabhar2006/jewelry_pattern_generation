@@ -31,7 +31,6 @@ const SECRET_KEY = 'your_secret_key';
 
 // Connect to MongoDB Atlas
 const mongoURI = 'mongodb+srv://root:root@cluster0.6oopo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-
 // Connect to MongoDB
 mongoose.connect(mongoURI, {
     serverSelectionTimeoutMS: 20000, // Increase timeout to 20 seconds
@@ -57,21 +56,47 @@ const authenticateToken = (req, res, next) => {
 // User schema and model
 const userSchema = new mongoose.Schema(
     {
-        email: { type: String, required: true, unique: true },
-        phone: { type: String, required: true },
-        username: { type: String, required: true, unique: true },
-        password: { type: String, required: true },
-        images: [
-            {
-                filename: { type: String },
-                contentType: { type: String },
-                data: { type: String }, // Base64-encoded image data
+        fullName: { type: String, required: true },
+        email: { 
+            type: String, 
+            required: true, 
+            unique: true,
+            lowercase: true,
+            trim: true
+        },
+        phone: { type: String, required: false },
+        username: { 
+            type: String, 
+            required: true, 
+            unique: true,
+            lowercase: true,
+            trim: true
+        },
+        password: { type: String, required: false },
+        // New OAuth-specific fields
+        oauthProviders: [{
+            provider: {
+                type: String,
+                enum: ['google', 'github', 'linkedin']
             },
-        ],
+            providerId: String,
+            accessToken: String
+        }],
+        profilePicture: { 
+            type: String, 
+            default: null 
+        },
+        lastLogin: { 
+            type: Date, 
+            default: Date.now 
+        },
+        isVerified: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );
-
 const User = mongoose.model('User', userSchema);
 
 // Passport serialization
@@ -100,7 +125,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Google OAuth configuration
+// Google OAuth Strategy
 passport.use(
     new GoogleStrategy(
         {
@@ -110,14 +135,57 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                let user = await User.findOne({ email: profile.emails[0].value });
+                // More comprehensive user creation/update
+                let user = await User.findOne({ 
+                    $or: [
+                        { email: profile.emails[0].value },
+                        { 'oauthProviders.providerId': profile.id }
+                    ]
+                });
+
+                const userDetails = {
+                    fullName: profile.displayName || 'Unnamed',
+                    email: profile.emails[0]?.value || 'noemail@google.com',
+                    username: profile.id, // Consider making this more unique
+                    isVerified: profile.emails[0]?.verified || false
+                };
+
                 if (!user) {
-                    user = await User.create({
-                        // fullName: profile.displayName || 'Unnamed',
-                        email: profile.emails[0]?.value || 'noemail@google.com',
-                        username: profile.id,
+                    // Create new user
+                    user = new User({
+                        ...userDetails,
+                        oauthProviders: [{
+                            provider: 'google',
+                            providerId: profile.id,
+                            accessToken
+                        }]
                     });
+                } else {
+                    // Update existing user
+                    user.lastLogin = new Date();
+                    
+                    // Check if Google provider already exists
+                    const googleProviderIndex = user.oauthProviders.findIndex(
+                        p => p.provider === 'google'
+                    );
+
+                    if (googleProviderIndex !== -1) {
+                        // Update existing provider
+                        user.oauthProviders[googleProviderIndex].accessToken = accessToken;
+                    } else {
+                        // Add new OAuth provider
+                        user.oauthProviders.push({
+                            provider: 'google',
+                            providerId: profile.id,
+                            accessToken
+                        });
+                    }
+
+                    // Update other user details
+                    Object.assign(user, userDetails);
                 }
+
+                await user.save();
                 return done(null, user);
             } catch (err) {
                 return done(err, null);
@@ -126,24 +194,69 @@ passport.use(
     )
 );
 
-// GitHub OAuth configuration
+// GitHub OAuth Strategy
 passport.use(
     new GitHubStrategy(
         {
             clientID: 'Ov23liaFsoMahmTV8nfY',
             clientSecret: 'd0cc782dddef5eb24f50787fc4628280e423f0db',
             callbackURL: 'http://localhost:3001/auth/github/callback',
+            scope: ['user:email'], // Request user email
+            passReqToCallback: true
         },
-        async (accessToken, refreshToken, profile, done) => {
+        async (req, accessToken, refreshToken, profile, done) => {
             try {
-                let user = await User.findOne({ username: profile.username });
+                // Find existing user
+                let user = await User.findOne({ 
+                    $or: [
+                        { email: profile.emails?.[0]?.value },
+                        { 'oauthProviders.providerId': profile.id }
+                    ]
+                });
+
+                const userDetails = {
+                    fullName: profile.displayName || profile.username || 'Unnamed GitHub User',
+                    email: profile.emails?.[0]?.value || `${profile.username}@github.com`,
+                    username: profile.username, // GitHub username
+                    profilePicture: profile.photos?.[0]?.value || null,
+                    isVerified: !!profile.emails?.[0]?.value
+                };
+
                 if (!user) {
-                    user = await User.create({
-                        // fullName: profile.displayName || profile.username,
-                        email: `${profile.username}@github.com`, // GitHub may not provide an email
-                        username: profile.username,
+                    // Create new user
+                    user = new User({
+                        ...userDetails,
+                        oauthProviders: [{
+                            provider: 'github',
+                            providerId: profile.id,
+                            accessToken
+                        }]
                     });
+                } else {
+                    // Update existing user
+                    user.lastLogin = new Date();
+                    
+                    // Check if GitHub provider already exists
+                    const githubProviderIndex = user.oauthProviders.findIndex(
+                        p => p.provider === 'github'
+                    );
+                    if (githubProviderIndex !== -1) {
+                        // Update existing provider
+                        user.oauthProviders[githubProviderIndex].accessToken = accessToken;
+                    } else {
+                        // Add new OAuth provider
+                        user.oauthProviders.push({
+                            provider: 'github',
+                            providerId: profile.id,
+                            accessToken
+                        });
+                    }
+                    
+                    // Update other user details
+                    Object.assign(user, userDetails);
                 }
+
+                await user.save();
                 return done(null, user);
             } catch (err) {
                 return done(err, null);
@@ -152,69 +265,142 @@ passport.use(
     )
 );
 
-// linkedin OAuth configuration
+// LinkedIn OAuth Strategy
 passport.use(
     new LinkedInStrategy(
-      {
-        clientID: '77hz5g9euo83j0',
-        clientSecret: 'WPL_AP1.rrnlYvDMOgBXTNII.toayqQ==',
-        callbackURL: 'http://localhost:3001/auth/linkedin/callback',
-        scope: ['r_liteprofile', 'r_emailaddress', 'openid', 'profile', 'email']
-      },
-      async (req, accessToken, refreshToken, profile, done) => {
-        try {
-          let user = await User.findOne({ email: profile.emails[0].value });
-          if (!user) {
-            user = await User.create({
-            //   fullName: profile.displayName,
-              email: profile.emails[0].value,
-              username: profile.id,
-            });
-          }
-          return done(null, user);
-        } catch (err) {
-          return done(err, null);
-        }
-      }
-    )
-  );
+        {
+            clientID: '77hz5g9euo83j0',
+            clientSecret: 'WPL_AP1.rrnlYvDMOgBXTNII.toayqQ==',
+            callbackURL: 'http://localhost:3001/auth/linkedin/callback',
+            scope: ['r_emailaddress', 'r_liteprofile'], // Request email and basic profile
+            passReqToCallback: true
+        },
+        async (req, accessToken, refreshToken, profile, done) => {
+            try {
+                // Find existing user
+                let user = await User.findOne({ 
+                    $or: [
+                        { email: profile.emails[0]?.value },
+                        { 'oauthProviders.providerId': profile.id }
+                    ]
+                });
 
-// OAuth routes
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+                const userDetails = {
+                    fullName: profile.displayName || 'Unnamed LinkedIn User',
+                    email: profile.emails[0]?.value || 'noemail@linkedin.com',
+                    username: profile.id, // Consider making this more unique
+                    isVerified: !!profile.emails[0]?.value
+                };
+
+                if (!user) {
+                    // Create new user
+                    user = new User({
+                        ...userDetails,
+                        oauthProviders: [{
+                            provider: 'linkedin',
+                            providerId: profile.id,
+                            accessToken
+                        }]
+                    });
+                } else {
+                    // Update existing user
+                    user.lastLogin = new Date();
+                    
+                    // Check if LinkedIn provider already exists
+                    const linkedinProviderIndex = user.oauthProviders.findIndex(
+                        p => p.provider === 'linkedin'
+                    );
+                    if (linkedinProviderIndex !== -1) {
+                        // Update existing provider
+                        user.oauthProviders[linkedinProviderIndex].accessToken = accessToken;
+                    } else {
+                        // Add new OAuth provider
+                        user.oauthProviders.push({
+                            provider: 'linkedin',
+                            providerId: profile.id,
+                            accessToken
+                        });
+                    }
+                    
+                    // Update other user details
+                    Object.assign(user, userDetails);
+                }
+
+                await user.save();
+                return done(null, user);
+            } catch (err) {
+                return done(err, null);
+            }
+        }
+    )
+);
+
+app.get('/auth/google', passport.authenticate('google', { 
+    scope: ['profile', 'email', 'openid'] 
+}));
 app.get(
     '/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login' }),
+    passport.authenticate('google', { 
+        failureRedirect: '/login',
+        failureFlash: true 
+    }),
     (req, res) => {
-        const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
-        res.redirect(`http://localhost:3000?token=${token}`);
+        try {
+            const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
+            res.redirect(`http://localhost:3000?token=${token}`);
+        } catch (error) {
+            console.error('Token generation error:', error);
+            res.redirect('/login?error=token_generation_failed');
+        }
     }
 );
 
-app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+// OAuth routes
+app.get('/auth/github', passport.authenticate('github', { 
+    scope: ['user:email', 'read:user', 'profile'] 
+}));
 app.get(
     '/auth/github/callback',
-    passport.authenticate('github', { failureRedirect: '/login' }),
+    passport.authenticate('github', { 
+        failureRedirect: '/login',
+        failureFlash: true 
+    }),
     (req, res) => {
-        const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
-        res.redirect(`http://localhost:3000?token=${token}`);
+        try {
+            const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
+            res.redirect(`http://localhost:3000?token=${token}`);
+        } catch (error) {
+            console.error('Token generation error:', error);
+            res.redirect('/login?error=token_generation_failed');
+        }
     }
 );
 
-app.get('/auth/linkedin', passport.authenticate('linkedin', { scope: ['r_liteprofile', 'r_emailaddress', 'openid', 'profile', 'email'] }));
+app.get('/auth/linkedin', passport.authenticate('linkedin', { 
+    scope: ['r_liteprofile', 'r_emailaddress', 'openid', 'profile', 'email'] 
+}));
 app.get(
     '/auth/linkedin/callback',
-    passport.authenticate('linkedin', { failureRedirect: '/login' }),
+    passport.authenticate('linkedin', { 
+        failureRedirect: '/login',
+        failureFlash: true 
+    }),
     (req, res) => {
-        const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
-        res.redirect(`http://localhost:3000?token=${token}`);
+        try {
+            const token = jwt.sign({ id: req.user.id }, SECRET_KEY, { expiresIn: '1h' });
+            res.redirect(`http://localhost:3000?token=${token}`);
+        } catch (error) {
+            console.error('Token generation error:', error);
+            res.redirect('/login?error=token_generation_failed');
+        }
     }
 );
 
 // Routes
 app.post('/create', async (req, res) => {
     try {
-        const { email, phone, username, password } = req.body;
-        if ( !email || !phone  || !username || !password) {
+        const { fullName, email, phone, username, password } = req.body;
+        if (!fullName || !email || !phone || !username || !password) {
             return res.status(400).json({ message: 'All fields are required' });
         }
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -222,7 +408,7 @@ app.post('/create', async (req, res) => {
             return res.status(400).json({ message: 'Username or email already exists' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({  email, phone, username, password: hashedPassword });
+        const newUser = new User({ fullName, email, phone, username, password: hashedPassword });
         await newUser.save();
         res.status(201).json({ message: 'Account created successfully' });
     } catch (error) {
@@ -242,7 +428,7 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
         const token = jwt.sign({ id: user._id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
-        res.status(200).json({ message: 'Login successful', token, user: { username: user.username} });
+        res.status(200).json({ message: 'Login successful', token, user: { username: user.username, fullName: user.fullName } });
     } catch (error) {
         console.error('Error in /login route:', error);
         res.status(500).json({ message: 'Server error' });
@@ -251,11 +437,26 @@ app.post('/login', async (req, res) => {
 
 app.get('/profile', authenticateToken, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        const user = await User.findById(req.user.id)
+            .select('-password -oauthProviders.accessToken'); // Exclude sensitive info
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.status(200).json(user);
+
+        res.status(200).json({
+            id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            phone: user.phone || null,
+            profilePicture: user.profilePicture,
+            isVerified: user.isVerified,
+            lastLogin: user.lastLogin,
+            oauthProviders: user.oauthProviders.map(provider => ({
+                provider: provider.provider
+            }))
+        });
     } catch (error) {
         console.error('Error in /profile route:', error);
         res.status(500).json({ message: 'Server error' });
@@ -263,40 +464,13 @@ app.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // Upload image to local filesystem
-app.post('/upload', authenticateToken, upload.array('imageInput', 5), async (req, res) => {
-    try {
-        console.log('Files received:', req.files);
-
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'No files uploaded' });
-        }
-
-        const imageArray = req.files.map((file) => ({
-            filename: file.originalname,
-            contentType: file.mimetype,
-            data: fs.readFileSync(file.path, { encoding: 'base64' }),
-        }));
-        console.log('Image array:', imageArray);
-
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        console.log('User before update:', user);
-        user.images.push(...imageArray);
-        await user.save();
-        console.log('User after update:', user);
-
-        req.files.forEach((file) => fs.unlinkSync(file.path)); // Clean up local files
-
-        res.status(201).json({ message: 'Images uploaded and stored successfully', images: user.images });
-    } catch (error) {
-        console.error('Error in /upload route:', error.message);
-        res.status(500).json({ message: 'Server error' });
+app.post('/upload', authenticateToken, upload.single('imageInput'), (req, res) => {
+    console.log(req.file); // Log the uploaded file information for debugging
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
     }
+    res.status(201).json({ filePath: req.file.path, message: 'Image uploaded successfully' }); // Return the file path
 });
-
 
 // Fetch uploaded image
 app.get('/image/:filename', async (req, res) => {

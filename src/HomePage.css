@@ -1,14 +1,3 @@
-/* Global styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif; /* Changed to Poppins font */
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal; 
-}
-
 body{
     margin-top: 0px;
     padding: 0px !important;
@@ -16,7 +5,7 @@ body{
 
 h1 {
     font-style: normal;
-    font-size: 4rem;
+    font-size: 3.5rem;
     font-family:Verdana, Geneva, Tahoma, sans-serif;
     font-weight: 500;
     font-style:regular;
@@ -75,8 +64,6 @@ p {
     width: 100%;
 }
 
-
-
 /* Pop-up animation */
 @keyframes pop-up {
     to {
@@ -89,9 +76,9 @@ p {
 button {
     background-color: black !important;
     color: white;
-    padding: 15px 40px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 50px;
+    border-radius: 30px;
     font-size: 1.3rem;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     cursor: pointer;

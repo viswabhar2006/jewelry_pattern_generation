@@ -102,8 +102,8 @@ def process_image():
 
         # Change background to white before sketching
         bg_color = detect_dominant_color(img)
-        img = refine_background(img, bg_color, threshold=100)
-        img = refine_background(img, (255, 255, 255), threshold=100)
+        img = refine_background(img, bg_color, threshold=190)
+        img = refine_background(img, (255, 255, 255), threshold=190)
 
         # Convert the image to a sketch
         sketch_image = image_to_sketch(np.array(img))

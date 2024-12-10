@@ -8,19 +8,32 @@ const Indexx = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [slideIndex, setSlideIndex] = useState(0);
     const [activeFAQ, setActiveFAQ] = useState(null);
-    const [isAutoSliding, setIsAutoSliding] = useState(true);
     const [userProfile, setUserProfile] = useState(null);
     const [uploadedImagePreview, setUploadedImagePreview] = useState(null);
     const [generatedImagePreview, setGeneratedImagePreview] = useState(null);
     const [isLoading, setIsLoading] = useState(false); // Loader state
     const navigate = useNavigate();
+
     const slides = [
-        { src1: require("./assets/sketch/1.jpg"), alt1: "Jewelry Sketch 1", src2: require("./assets/original/1.jpg"), alt2: "Jewelry Design 1" },
-        { src1: require("./assets/sketch/2.jpg"), alt1: "Jewelry Sketch 2", src2: require("./assets/original/2.jpg"), alt2: "Jewelry Design 2" },
-        { src1: require("./assets/sketch/3.jpg"), alt1: "Jewelry Sketch 3", src2: require("./assets/original/3.jpg"), alt2: "Jewelry Design 3" },
-        { src1: require("./assets/sketch/4.jpg"), alt1: "Jewelry Sketch 4", src2: require("./assets/original/4.jpg"), alt2: "Jewelry Design 4" },
-        { src1: require("./assets/sketch/5.jpg"), alt1: "Jewelry Sketch 5", src2: require("./assets/original/5.jpg"), alt2: "Jewelry Design 5" },
+        { src1: "/assets/sketch/1.jpg", alt1: "Jewelry Sketch 1", src2: "assets/original/1.jpg", alt2: "Jewelry Design 1" },
+        { src1: "/assets/sketch/2.jpg", alt1: "Jewelry Sketch 2", src2: "/assets/original/2.jpg", alt2: "Jewelry Design 2" },
+        { src1: "/assets/sketch/3.jpg", alt1: "Jewelry Sketch 3", src2: "/assets/original/3.jpg", alt2: "Jewelry Design 3" },
+        { src1: "/assets/sketch/4.jpg", alt1: "Jewelry Sketch 4", src2: "/assets/original/4.jpg", alt2: "Jewelry Design 4" },
+        { src1: "/assets/sketch/5.jpg", alt1: "Jewelry Sketch 5", src2: "/assets/original/5.jpg", alt2: "Jewelry Design 5" },
     ];
+
+    const nextSlide = () => {
+        setSlideIndex((prev) => (prev + 1) % slides.length);
+    };
+
+    const prevSlide = () => {
+        setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
+    };
+
+    const toggleFAQ = (index) => {
+        setActiveFAQ(activeFAQ === index ? null : index);
+    };
+
     useEffect(() => {
         // Check for token in query parameters (for OAuth redirect)
         const queryParams = new URLSearchParams(window.location.search);
@@ -49,14 +62,7 @@ const Indexx = () => {
             navigate('/login');
         }
     }, [navigate]);
-    useEffect(() => {
-        if (isAutoSliding) {
-            const timer = setInterval(() => {
-                setSlideIndex((prev) => (prev + 1) % slides.length);
-            }, 3000); // Change slide every 3 seconds
-            return () => clearInterval(timer); // Cleanup timer
-        }
-    }, [isAutoSliding, slides.length]);
+
     const fetchUserProfile = async (token) => {
         try {
             const response = await fetch('http://localhost:3001/profile', {
@@ -79,17 +85,13 @@ const Indexx = () => {
             alert('An error occurred while fetching profile data.');
         }
     };
-    
+
     const handleSignOut = () => {
         sessionStorage.removeItem('token');
         alert('You have signed out!');
         navigate('/login');
     };
 
-
-
-    const nextSlide = () => setSlideIndex((prev) => (prev + 1) % slides.length);
-    const prevSlide = () => setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -139,20 +141,40 @@ const Indexx = () => {
 
     const sections = {
         Home: (
-            <div className="home-section">
+            
+<div className="home-section">
                 <div className="slideshow-container">
                     <div className="mySlides">
-                        <div className="slideImages">
-                            <img src={slides[slideIndex].src1} alt={slides[slideIndex].alt1} />
-                            <img src={slides[slideIndex].src2} alt={slides[slideIndex].alt2} />
-                        </div>
+                    <img src={slides[slideIndex].src1} alt={slides[slideIndex].alt1} />
+                    <img src={slides[slideIndex].src2} alt={slides[slideIndex].alt2} />
                     </div>
-                    <a className="prev" onClick={prevSlide}>&#10094;</a>
-                    <a className="next" onClick={nextSlide}>&#10095;</a>
-                    
+                    <a className="prev" onClick={prevSlide}>
+                        &#10094;
+                    </a>
+                    <a className="next" onClick={nextSlide}>
+                        &#10095;
+                    </a>
+                </div>
+
+                <div className="Instruct"> 
+                    <h1>INSTRUCTIONS</h1>
+                </div>
+
+                <div className="content-boxes">
+                    <div className="box">
+                        <h3>Step 1</h3>
+                        <p>Choose your design inspiration.</p>
+                    </div>
+                    <div className="box">
+                        <h3>Step 2</h3>
+                        <p>Upload your favorite patterns.</p>
+                    </div>
+                    <div className="box">
+                        <h3>Step 3</h3>
+                        <p>Discover our unique jewelry collections.</p>
+                    </div>
                 </div>
             </div>
-            
         ),
         upload: (
             <div className="upload-section">
@@ -190,22 +212,79 @@ const Indexx = () => {
                 </div>
             </div>
         ),
+
+        about: (
+            <div className="about-section">
+                <div className="faq-with-image">
+                    <div className="faq-container">
+                        <h2 className="faq-heading">Frequently Asked Questions</h2>
+                        <div className="faq-container">
+                            <div className="faq">
+                                <div className="faq-question" onClick={() => toggleFAQ(0)}>
+                                    <h3>What is Jewelry Design Pattern Generation?
+                                        <span className="toggle-icon">{activeFAQ === 0 ? "-" : "+"}</span>
+                                    </h3>
+                                    {activeFAQ === 0 && <p>It is a process of creating unique jewelry designs using advanced AI tools.</p>}
+                                </div>
+                                <div className="faq-question" onClick={() => toggleFAQ(1)}>
+                                    <h3>
+                                        Can I upload my own designs?
+                                        <span className="toggle-icon">{activeFAQ === 1 ? "-" : "+"}</span>
+                                    </h3>
+                                    {activeFAQ === 1 && <p>Yes, you can upload your favorite patterns and inspirations.</p>}
+                                </div>
+                                <div className="faq-question" onClick={() => toggleFAQ(2)}>
+          <                         h3>
+            Is this platform free to use?
+            <span className="toggle-icon">{activeFAQ === 2 ? "-" : "+"}</span>
+          </h3>
+          {activeFAQ === 2 && <p>Yes, our platform is free for all users to explore and create designs.</p>}
+        </div>
+        <div className="faq-question" onClick={() => toggleFAQ(3)}>
+          <h3>
+            Which AI tool is used in this?
+            <span className="toggle-icon">{activeFAQ === 3 ? "-" : "+"}</span>
+          </h3>
+          {activeFAQ === 3 && <p>GAN (Generative Adverserial Network) has been used to accomplish this task.</p>}
+        </div>
+        <div className="faq-question" onClick={() => toggleFAQ(4)}>
+          <h3>
+            What file formats are supported for uploads?
+            <span className="toggle-icon">{activeFAQ === 4 ? "-" : "+"}</span>
+          </h3>
+          {activeFAQ === 4 && <p>We support JPEG, PNG, WEBP and AVIF file formats for uploading designs.</p>}
+        </div>
+        <div className="faq-question" onClick={() => toggleFAQ(5)}>
+          <h3>
+            Are the designs copyright-free?
+            <span className="toggle-icon">{activeFAQ === 5 ? "-" : "+"}</span>
+          </h3>
+          {activeFAQ === 5 && <p>Yes, all designs generated are copyright-free and can be used commercially.</p>}
+        </div>
+      </div>
+    </div>
+  </div>
+
+                    <div className="faq-image-container">
+                        <img src="./assets/question_mark.jpg" alt="Creative Journey" className="faq-image" />
+                    </div>
+                </div>
+            </div>
+        ),
+
+        
         profile: (
             <div className="profile-section">
                 <h2>Profile Details</h2>
                 {userProfile ? (
                     <div className="profile-details">
                         <p><strong>Username:</strong> {userProfile.username || "N/A"}</p>
+                        <p><strong>Full Name:</strong> {userProfile.fullName || "N/A"}</p>
                         <p><strong>Email:</strong> {userProfile.email || "N/A"}</p>
-                        <p><strong>Phone:</strong> {userProfile.phone || "N/A"}</p>
+                        <p><strong>Phone number:</strong> {userProfile.phone || "N/A"}</p>
                     </div>
                 ) : (
                     <p>Loading profile...</p>
-                )}
-                {userProfile === null && (
-                    <p className="error-message">
-                        Unable to load profile data. Please try again later or contact support.
-                    </p>
                 )}
             </div>
         ),        
@@ -213,7 +292,7 @@ const Indexx = () => {
             <div className="contact-section">
                 <h2>Contact Us</h2>
                 <div className="contact-details">
-                    <pre><i className="fa fa-envelope"></i>  project2024rj@gmail.com</pre>
+                    <pre><i className="fa fa-envelope"></i>  lustrejewelry@gmail.com</pre>
                     <pre><i className="fa fa-phone"></i>  9059717805</pre>
                     <pre><i className="fa fa-map-marker"></i>  KMIT, Narayanaguda</pre>
                 </div>
@@ -225,11 +304,12 @@ const Indexx = () => {
         <div className="main-container">
             <header className="main-header">
                 <div className="header-content">
-                
-                    <div className="logo"><a href="#">Jewelry Design</a></div>
+                <img src="./assets/logo.jpg" alt="Logo" className="logo-image" />
+                    <div className="logo"><a href="#">Lustre Jewelry</a></div>
                     <nav className="main-nav">
                         <button className={activeSection === "Home" ? "active" : ""} onClick={() => setActiveSection("Home")}>Home</button>
                         <button className={activeSection === "upload" ? "active" : ""} onClick={() => setActiveSection("upload")}>Upload</button>
+                        <button className={activeSection === "about" ? "active" : ""} onClick={() => setActiveSection("about")}>About</button>
                         <button className={activeSection === "profile" ? "active" : ""} onClick={() => setActiveSection("profile")}>Profile</button>
                         <button className={activeSection === "contact" ? "active" : ""} onClick={() => setActiveSection("contact")}>Contact Us</button>
                         <button onClick={handleSignOut}>Sign Out</button>

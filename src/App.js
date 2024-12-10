@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import HomePage from './HomePage';
 import Login from './Login';
@@ -15,6 +15,11 @@ function App() {
         setIsLoggedIn(true);
     };
 
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        sessionStorage.removeItem('token');
+    };
+
     return (
         <div className="App">
             <Routes>
@@ -23,7 +28,10 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/create-account" element={<CreateAccount />} />
                 {/* Protect Indexx route */}
-                <Route path="/indexx" element={isLoggedIn ? <Indexx /> : <Navigate to="/login" replace />} />
+                <Route 
+                    path="/indexx" 
+                    element={isLoggedIn ? <Indexx onLogout={handleLogout} /> : <Navigate to="/login" />} 
+                />
                 {/* 404 Route */}
                 <Route path="*" element={<div>404: Page Not Found</div>} />
             </Routes>
