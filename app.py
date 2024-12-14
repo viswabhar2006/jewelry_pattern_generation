@@ -90,7 +90,7 @@ def process_image():
 
         if output_format not in ['JPEG', 'PNG', 'WEBP', 'AVIF']:
             return jsonify({'error': 'Unsupported output format. Use JPEG, PNG, WEBP, or AVIF.'}), 400
-
+        
         # Load image into OpenCV format
         file_bytes = np.asarray(bytearray(image_file.read()), dtype=np.uint8)
         cv_image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)

@@ -104,38 +104,67 @@ const Indexx = () => {
 
     const handleImageGeneration = async (e) => {
         e.preventDefault();
-
+    
         if (!uploadedImagePreview) {
             alert("Please upload an image first.");
             return;
         }
-
-        setIsLoading(true); // Start the loader
-
+    
+        setIsLoading(true);
+    
         try {
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                alert("Authentication token not found. Please log in again.");
+                setIsLoading(false);
+                return;
+            }
+    
+            // Upload image
             const formData = new FormData();
             const imageFile = document.querySelector('input[type="file"]').files[0];
             formData.append('imageInput', imageFile);
-
-            const response = await fetch('http://localhost:5000/process-image', {
+    
+            const uploadResponse = await fetch('http://localhost:3001/upload', {
                 method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
                 body: formData,
             });
-
-            if (!response.ok) {
-                alert("Error generating image. Please try again.");
-                setIsLoading(false); // Stop the loader on error
+    
+            if (!uploadResponse.ok) {
+                alert("Error uploading image. Please try again.");
+                setIsLoading(false);
                 return;
             }
-
-            const blob = await response.blob();
+    
+            const uploadData = await uploadResponse.json();
+            const uploadedFilePath = uploadData.filePath;
+    
+            // Process image - use FormData instead of JSON
+            const processFormData = new FormData();
+            processFormData.append('imageInput', imageFile);
+    
+            const processResponse = await fetch('http://localhost:5000/process-image', {
+                method: 'POST',
+                body: processFormData,
+            });
+    
+            if (!processResponse.ok) {
+                alert("Error generating image. Please try again.");
+                setIsLoading(false);
+                return;
+            }
+    
+            const blob = await processResponse.blob();
             const generatedImageURL = URL.createObjectURL(blob);
             setGeneratedImagePreview(generatedImageURL);
         } catch (error) {
             console.error("Error generating image:", error);
             alert("An error occurred while generating the image. Please try again later.");
         } finally {
-            setIsLoading(false); // Stop the loader
+            setIsLoading(false);
         }
     };
 

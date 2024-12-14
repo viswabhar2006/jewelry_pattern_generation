@@ -14,12 +14,6 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
-
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -113,10 +107,16 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploaded');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true }); // recursive ensures parent directories are created if needed
+}
+
 // Multer storage setup for local uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadsDir); // Save files to uploads directory
+        cb(null, uploadsDir); // Save files to 'uploaded' directory
     },
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`); // Rename file with timestamp
@@ -463,18 +463,21 @@ app.get('/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// Upload image to local filesystem
+// Update the image upload route
 app.post('/upload', authenticateToken, upload.single('imageInput'), (req, res) => {
-    console.log(req.file); // Log the uploaded file information for debugging
+    console.log('Uploaded file:', req.file); // More detailed logging
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
-    res.status(201).json({ filePath: req.file.path, message: 'Image uploaded successfully' }); // Return the file path
+    res.status(201).json({ 
+        filePath: req.file.filename, // Use filename instead of full path
+        message: 'Image uploaded successfully' 
+    });
 });
 
-// Fetch uploaded image
+// Update the image fetch route
 app.get('/image/:filename', async (req, res) => {
-    const filePath = path.join(uploadsDir, req.params.filename);
+    const filePath = path.join(__dirname, 'uploaded', req.params.filename);
     
     fs.access(filePath, fs.constants.F_OK, (err) => {
         if (err) return res.status(404).json({ message: 'Image not found' });

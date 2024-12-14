@@ -11,18 +11,19 @@ html, body {
     min-height: 100vh; /* Use min-height to ensure it grows with content */
     width: 100vw;
     background-size: cover;
-    background-image: url('9.png');
+    background-image: url('1.avif');
     padding: 20px; /* Adds space around the content */
     overflow-y: auto; /* Allows scrolling if content overflows */
 }
 
 .login-box {
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     padding: 20px;
     border-radius: 10px;
     text-align: center;
-    color: white; /* Ensure text is readable */
+    color: white;
+    background-color: rgba(0,0,0,0.5); /* Ensure text is readable */
 }
 
 .login-box h1 {
@@ -36,7 +37,7 @@ html, body {
 
 .input-group {
     margin-bottom: 15px;
-    position: relative;
+   
 }
 
 .input-group label {
@@ -47,7 +48,7 @@ html, body {
 }
 
 .input-group input {
-    width: 100%;
+    width: 95%;
     padding: 7px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -60,11 +61,11 @@ html, body {
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    color: #ddd;
+    color:white;
 }
 
 .button-container button {
-    width: 100%;
+    width: 90%;
     padding: 12px;
     background-color: black;
     color: white;
